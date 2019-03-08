@@ -6,6 +6,7 @@ import  pylab              as      pl
 from    mcfit              import  xi2P, P2xi
 from    scipy.interpolate  import  interp1d
 from    scipy.signal       import  medfilt
+from    smooth             import  bin_smooth
 
 
 def pip_convert(fname):
@@ -62,60 +63,48 @@ if __name__ == '__main__':
     P2s.append(P2)
     P4s.append(P4)
 
-    ##  pl.loglog(ks, P0, 'm', alpha=0.1, markersize=3)
-    ##  pl.loglog(ks, P2, 'm', alpha=0.1, markersize=3)
-
-  ##  Mean PIP P0 and error.
-  P0s  = np.array(P0s)
-  mP0  = np.mean(P0s, axis=0)
-  vP0  =  np.var(P0s, axis=0)
-
-  ##  pl.errorbar(ks, mP0, np.sqrt(vP0), fmt='^', c='c', alpha=0.5, markersize=3, label='Assignments -- Hankel')
-
-  ##  Mean PIP P2 and error.
-  P2s  = np.array(P2s)
-  mP2  = np.mean(P2s, axis=0)
-  vP2  =  np.var(P2s, axis=0)
-
-  ##  pl.errorbar(ks, mP2, np.sqrt(vP2), fmt='^', c='c', alpha=0.5, markersize=3, label='')
-
-  '''
-  ## -- Direct Fourier measurements --
-  data = np.loadtxt('../dat/_poles.txt')
-
-  pl.loglog(data[:,0], data[:,1],  'y-', alpha=0.3, label='Data -- Direct FFT (Old)')
-  pl.loglog(data[:,0], data[:,2],  'y-', alpha=0.3)
-  '''
-
   ##  Plot the truth.
   ks, P0, P2, P4 = results['truth']
 
   P0 = interp1d(ks, P0, kind='linear', copy=True, bounds_error=False, fill_value=0.0, assume_sorted=False)
   P2 = interp1d(ks, P2, kind='linear', copy=True, bounds_error=False, fill_value=0.0, assume_sorted=False)
 
-  ## -- Direct Fourier measurements --                                                                                                                       
+  ##  Direct Fourier measurements.                                                                                                                       
   data = np.loadtxt('../dat/poles.txt')
 
-  pl.loglog(data[:,0], 100. * (medfilt(data[:,1], 101) / P0(data[:,0]) - 1.0),  'k-', alpha=0.8, label=r'$P0$')
-  pl.loglog(data[:,0], 100. * (medfilt(data[:,2], 101) / P2(data[:,0]) - 1.0),  'r-', alpha=0.8, label=r'$P2$')
+  iterate = 35
+  pl.loglog(bin_smooth(data[:,0], iterate), 100. * (bin_smooth(data[:,1], iterate) / P0(bin_smooth(data[:,0], iterate)) - 1.0),  'k-', alpha=0.8, label=r'3D FFT $P0$')
 
-  '''
-  ## Plot los versions.
-  ks, P0, P2, P4 = results['los_one']
+  iterate = 65
+  pl.loglog(bin_smooth(data[:,0], iterate), 100. * (bin_smooth(data[:,2], iterate) / P2(bin_smooth(data[:,0], iterate)) - 1.0),  'r-', alpha=0.8, label=r'3D FFT $P2$')
+  
+  ##  Mean PIP P0 and error.                                                                                                                                  
+  P0s  = np.array(P0s)
+  mP0  = np.mean(P0s, axis=0)
+  sP0  =  np.std(P0s, axis=0)
 
-  pl.plot(ks,  P0, 'k^', alpha=0.5, markersize=3, label='LOS -- Hankel')
-  pl.plot(ks,  P2, 'k^', alpha=0.5, markersize=3, label='')
-  '''
+  pl.errorbar(ks, 100. * (mP0 / P0(ks) - 1.0), 100. * sP0 / P0(ks), fmt='^', c='c', alpha=0.5, markersize=3, label='PIP')                                              
+
+  ##  Mean PIP P2 and error.                                                                                                                                
+  P2s  = np.array(P2s)
+  mP2  = np.mean(P2s, axis=0)
+  sP2  =  np.std(P2s, axis=0)
+
+  pl.errorbar(ks + 0.005, 100. * (mP2 / P2(ks) - 1.0), 100. * sP2 / P2(ks), fmt='^', c='m', alpha=0.5, markersize=3, label='')
+
+  ##  Error band. 
+  ax = pl.gca()
+  ax.fill_between(data[:,0], -1., 1., color='b', alpha=0.2)
 
   pl.xscale('linear')
   pl.yscale('linear')
 
   pl.xlabel(r'k')
-  pl.ylabel(r'$\Delta P(k)$')
+  pl.ylabel(r'$\%$')
 
   pl.legend(ncol=1)
 
-  pl.xlim(0.1,      .5)
-  pl.ylim(-1.e1,  1.e1)
+  pl.xlim(0.1, .5)
+  pl.ylim(-5., 5.)
 
   pl.savefig('../plots/dpk.pdf')

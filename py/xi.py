@@ -5,6 +5,7 @@ import  pylab              as      pl
 
 from    mcfit              import  xi2P, P2xi
 from    scipy.interpolate  import  interp1d
+from    smooth             import  bin_smooth
 
 
 def pip_convert(fname):
@@ -61,36 +62,13 @@ if __name__ == '__main__':
     P2s.append(P2)
     P4s.append(P4)
 
-    ##  pl.loglog(ks, P0, 'm', alpha=0.1, markersize=3)
-    ##  pl.loglog(ks, P2, 'm', alpha=0.1, markersize=3)
-
-  ##  Mean PIP P0 and error.
-  P0s  = np.array(P0s)
-  mP0  = np.mean(P0s, axis=0)
-  vP0  =  np.var(P0s, axis=0)
-
-  ##  pl.errorbar(ks, mP0, np.sqrt(vP0), fmt='^', c='c', alpha=0.5, markersize=3, label='Assignments -- Hankel')
-
-  ##  Mean PIP P2 and error.
-  P2s  = np.array(P2s)
-  mP2  = np.mean(P2s, axis=0)
-  vP2  =  np.var(P2s, axis=0)
-
-  ##  pl.errorbar(ks, mP2, np.sqrt(vP2), fmt='^', c='c', alpha=0.5, markersize=3, label='')
-
   ## -- Direct Fourier measurements --
-  data = np.loadtxt('../dat/poles.txt')
+  data    = np.loadtxt('../dat/poles.txt')
 
-  pl.loglog(data[:,0], data[:,0] * data[:,1],  'k-', alpha=0.8, label=r'3D FFT $\hat P(k)$')
-  pl.loglog(data[:,0], data[:,0] * data[:,2],  'k-', alpha=0.8)
+  iterate =  2
+  pl.loglog(bin_smooth(data[:,0], iterate=iterate), bin_smooth(data[:,0] * data[:,1], iterate=iterate),  'k-', alpha=0.8, label=r'3D FFT $\hat P(k)$')
 
-  '''
-  ## -- Direct Fourier measurements --
-  data = np.loadtxt('../dat/_poles.txt')
-
-  pl.loglog(data[:,0], data[:,1],  'y-', alpha=0.3, label='Data -- Direct FFT (Old)')
-  pl.loglog(data[:,0], data[:,2],  'y-', alpha=0.3)
-  '''
+  pl.loglog(bin_smooth(data[:,0], iterate=iterate), bin_smooth(data[:,0] * data[:,2], iterate=iterate),  'k-', alpha=0.8)
 
   ##  Plot the truth.
   ks, P0, P2, P4 = results['truth']
@@ -98,13 +76,19 @@ if __name__ == '__main__':
   pl.plot(ks,  ks * P0, 'r^', alpha=0.5, markersize=3, label='Hankel(xi)')
   pl.plot(ks,  ks * P2, 'r^', alpha=0.5, markersize=3, label='')
 
-  '''
-  ## Plot los versions.
-  ks, P0, P2, P4 = results['los_one']
+  ##  Mean PIP P0 and error.                                                                                                                                 
+  P0s  = np.array(P0s)
+  mP0  =  np.mean(P0s, axis=0)
+  vP0  =   np.var(P0s, axis=0)
 
-  pl.plot(ks,  P0, 'k^', alpha=0.5, markersize=3, label='LOS -- Hankel')
-  pl.plot(ks,  P2, 'k^', alpha=0.5, markersize=3, label='')
-  '''
+  pl.errorbar(ks, ks * mP0, ks * np.sqrt(vP0), fmt='^', c='c', alpha=0.5, markersize=3, label='PIP')
+
+  ##  Mean PIP P2 and error.                                                                                                                                 
+  P2s  = np.array(P2s)
+  mP2  = np.mean(P2s, axis=0)
+  vP2  =  np.var(P2s, axis=0)
+
+  pl.errorbar(ks, ks * mP2, ks * np.sqrt(vP2), fmt='^', c='m', alpha=0.5, markersize=3, label='')  
 
   pl.xscale('log')
   pl.yscale('linear')
@@ -115,6 +99,6 @@ if __name__ == '__main__':
   pl.legend(ncol=1)
 
   pl.xlim(0.01,    1.)
-  ##  pl.ylim(1.e1,  4.e4)
+  pl.ylim(0.,    1.e3)
 
   pl.savefig('../plots/pk.pdf')
