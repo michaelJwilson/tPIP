@@ -1,4 +1,4 @@
-import  matplotlib;  matplotlib.use('Pdf')
+import  matplotlib
 
 import  numpy              as      np
 import  pylab              as      pl
@@ -8,11 +8,12 @@ from    scipy.interpolate  import  interp1d
 from    smooth             import  bin_smooth
 
 
-def pip_convert(fname):
+def pip_convert(fname, cumulative=False):
   ##  Given a pip file, get the P(k) multipoles.
   data  = np.loadtxt(fname)
 
   s     = data[:,0]
+
   xi0   = data[:,1]
   xi2   = data[:,2]
   xi4   = data[:,3]
@@ -25,31 +26,47 @@ def pip_convert(fname):
   ##  New logarithmic r binning.
   rs   = np.logspace(np.log10(0.2), np.log10(165.), 45, endpoint=True, base=10.)
 
-  xi0  = xi0(rs)
-  xi2  = xi2(rs)
-  xi4  = xi4(rs)
+  if cumulative:
+    lrs    = np.log10(rs)
+    dlr    = np.diff(lrs)[0]
 
-  ##  And conversion to Fourier.
-  ks, P0 = xi2P(rs, l=0, lowring=False)(xi0, extrap=False)
-  ks, P2 = xi2P(rs, l=2, lowring=False)(xi2, extrap=False)
-  ks, P4 = xi2P(rs, l=4, lowring=False)(xi4, extrap=False)
+    Ci0    = np.cumsum(xi0(rs) * rs ** 3.) * dlr
+    Ci2    = np.cumsum(xi2(rs) * rs ** 3.) * dlr
+    Ci4    = np.cumsum(xi4(rs) * rs ** 3.) * dlr 
 
-  return  ks, P0, P2, P4
+    ##  And conversion to Fourier.                                                                                                                      
+    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1)(Ci0, extrap=False)
+    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1)(Ci2, extrap=False)
+    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1)(Ci4, extrap=False)
+
+    return  ks, P0, P2, P4
+
+  else:
+    xi0  = xi0(rs)
+    xi2  = xi2(rs)
+    xi4  = xi4(rs)
+    
+    ##  And conversion to Fourier.
+    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=0)(xi0, extrap=False)
+    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=0)(xi2, extrap=False)
+    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=0)(xi4, extrap=False)
+    
+    return  ks, P0, P2, P4
 
 
 if __name__ == '__main__':
-  results = {}
+  cumulative           = False
+  results              = {}
 
-  results['truth']     = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_rls5nb45_xi_mp.dat')
-
-  results['los_one']   = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStestran_xi_mp.dat')
-  results['los_two']   = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest05_xi_mp.dat')
-  results['los_three'] = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest2_xi_mp.dat')
-  results['los_four']  = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest_xi_mp.dat')
+  results['truth']     = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_rls5nb45_xi_mp.dat', cumulative=cumulative)
+  results['los_one']   = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStestran_xi_mp.dat', cumulative=cumulative)
+  results['los_two']   = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest05_xi_mp.dat', cumulative=cumulative)
+  results['los_three'] = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest2_xi_mp.dat', cumulative=cumulative)
+  results['los_four']  = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_LOStest_xi_mp.dat', cumulative=cumulative)
 
   for dd in [1, 2, 3, 4]:
     fname                  = '../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_s%d_PIP992tm6nb21rls5nb45_p3_xi_mp.dat' % dd
-    results['PIP_%d' % dd] = pip_convert(fname)
+    results['PIP_%d' % dd] = pip_convert(fname, cumulative=cumulative)
 
   P0s = []
   P2s = []
@@ -99,6 +116,7 @@ if __name__ == '__main__':
   pl.legend(ncol=1)
 
   pl.xlim(0.01,    1.)
-  pl.ylim(0.,    1.e3)
+  ##  pl.ylim(0.,    1.e3)
 
-  pl.savefig('../plots/pk.pdf')
+  pl.show()
+  ## pl.savefig('../plots/pk.pdf')
