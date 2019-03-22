@@ -27,17 +27,17 @@ def pip_convert(fname, cumulative=False):
   rs   = np.logspace(np.log10(0.2), np.log10(165.), 45, endpoint=True, base=10.)
 
   if cumulative:
-    lrs    = np.log10(rs)
+    lrs    = np.log(rs)
     dlr    = np.diff(lrs)[0]
 
     Ci0    = np.cumsum(xi0(rs) * rs ** 3.) * dlr
     Ci2    = np.cumsum(xi2(rs) * rs ** 3.) * dlr
-    Ci4    = np.cumsum(xi4(rs) * rs ** 3.) * dlr 
+    Ci4    = np.cumsum(xi4(rs) * rs ** 3.) * dlr
 
-    ##  And conversion to Fourier.                                                                                                                      
-    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1)(Ci0, extrap=False)
-    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1)(Ci2, extrap=False)
-    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1)(Ci4, extrap=False)
+    ##  And conversion to Fourier.
+    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1j)(- Ci0 / rs**3, extrap=False)
+    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1j)(- Ci2 / rs**3, extrap=False)
+    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1j)(- Ci4 / rs**3, extrap=False)
 
     return  ks, P0, P2, P4
 
@@ -45,17 +45,17 @@ def pip_convert(fname, cumulative=False):
     xi0  = xi0(rs)
     xi2  = xi2(rs)
     xi4  = xi4(rs)
-    
+
     ##  And conversion to Fourier.
     ks, P0 = xi2P(rs, l=0, lowring=False, deriv=0)(xi0, extrap=False)
     ks, P2 = xi2P(rs, l=2, lowring=False, deriv=0)(xi2, extrap=False)
     ks, P4 = xi2P(rs, l=4, lowring=False, deriv=0)(xi4, extrap=False)
-    
+
     return  ks, P0, P2, P4
 
 
 if __name__ == '__main__':
-  cumulative           = False
+  cumulative           = True
   results              = {}
 
   results['truth']     = pip_convert('../dat/DESI_ra130-230_dec20-60_z0-3_1_h100_t_rls5nb45_xi_mp.dat', cumulative=cumulative)
@@ -93,19 +93,19 @@ if __name__ == '__main__':
   pl.plot(ks,  ks * P0, 'r^', alpha=0.5, markersize=3, label='Hankel(xi)')
   pl.plot(ks,  ks * P2, 'r^', alpha=0.5, markersize=3, label='')
 
-  ##  Mean PIP P0 and error.                                                                                                                                 
+  ##  Mean PIP P0 and error.
   P0s  = np.array(P0s)
   mP0  =  np.mean(P0s, axis=0)
   vP0  =   np.var(P0s, axis=0)
 
   pl.errorbar(ks, ks * mP0, ks * np.sqrt(vP0), fmt='^', c='c', alpha=0.5, markersize=3, label='PIP')
 
-  ##  Mean PIP P2 and error.                                                                                                                                 
+  ##  Mean PIP P2 and error.
   P2s  = np.array(P2s)
   mP2  = np.mean(P2s, axis=0)
   vP2  =  np.var(P2s, axis=0)
 
-  pl.errorbar(ks, ks * mP2, ks * np.sqrt(vP2), fmt='^', c='m', alpha=0.5, markersize=3, label='')  
+  pl.errorbar(ks, ks * mP2, ks * np.sqrt(vP2), fmt='^', c='m', alpha=0.5, markersize=3, label='')
 
   pl.xscale('log')
   pl.yscale('linear')
