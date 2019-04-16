@@ -35,9 +35,9 @@ def pip_convert(fname, cumulative=False):
     Ci4    = np.cumsum(xi4(rs) * rs ** 3.) * dlr
 
     ##  And conversion to Fourier.
-    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1j)(- Ci0 / rs**3, extrap=False)
-    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1j)(- Ci2 / rs**3, extrap=False)
-    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1j)(- Ci4 / rs**3, extrap=False)
+    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1j)(- Ci0 / rs**3, extrap=True)
+    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1j)(- Ci2 / rs**3, extrap=True)
+    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1j)(- Ci4 / rs**3, extrap=True)
 
     return  ks, P0, P2, P4
 
