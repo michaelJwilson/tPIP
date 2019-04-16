@@ -3,15 +3,20 @@ import  numpy  as  np
 import  pylab  as  pl
 
 
+##  Hankel transform test case:
+##  exp(-y) = \int_0^00  f(r) J0(yr) r dr. 
 x      =  np.logspace(-5, 5, num=1e4, endpoint=False)
 A      =  1. / (1. + x * x) ** 1.5
 
+##  G  = \int r * f(r) 
 step   =  np.diff(np.log(x))[0]
 G      =  np.cumsum(A * x ** 2.) * step 
 
 ##  Explicit deriv.
 nu     =  0
 
+##  MCFIT implements logarithmic integral!   
+##  g(y) = \int f(x) (xy)^q K(xy) d(lnx) 
 H1     =  mcfit.mcfit(x, mcfit.kernels.Mellin_BesselJ(-1, deriv=0), q=0, lowring=True)
 y1, B1 =  H1(x * G) 
 
