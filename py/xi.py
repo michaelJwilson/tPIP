@@ -3,9 +3,21 @@ import  matplotlib
 import  numpy              as      np
 import  pylab              as      pl
 
-from    mcfit              import  xi2P, P2xi
+from    mcfit              import  mcfit, kernels, xi2P, P2xi
 from    scipy.interpolate  import  interp1d
 from    smooth             import  bin_smooth
+
+
+class Xi2P(mcfit):
+    """Cumulative correlation function to power spectrum.
+    """
+    def __init__(self, r, l=0, deriv=1j, q=1.5, **kwargs):
+        self.l = l
+        UK = kernels.Mellin_SphericalBesselJ(l, deriv)
+        mcfit.__init__(self, r, UK, q, **kwargs)
+        self.prefac *= -1
+        phase = (-1 if l & 2 else 1) * (1j if l & 1 else 1)  # i^l
+        self.postfac *= (2*np.pi)**1.5 / phase
 
 
 def pip_convert(fname, cumulative=False):
@@ -35,9 +47,9 @@ def pip_convert(fname, cumulative=False):
     Ci4    = np.cumsum(xi4(rs) * rs ** 3.) * dlr
 
     ##  And conversion to Fourier.
-    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=1j)(- Ci0 / rs**3, extrap=True)
-    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=1j)(- Ci2 / rs**3, extrap=True)
-    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=1j)(- Ci4 / rs**3, extrap=True)
+    ks, P0 = Xi2P(rs, l=0, lowring=False)(Ci0, extrap='const')
+    ks, P2 = Xi2P(rs, l=2, lowring=False)(Ci2, extrap='const')
+    ks, P4 = Xi2P(rs, l=4, lowring=False)(Ci4, extrap='const')
 
     return  ks, P0, P2, P4
 
@@ -47,9 +59,9 @@ def pip_convert(fname, cumulative=False):
     xi4  = xi4(rs)
 
     ##  And conversion to Fourier.
-    ks, P0 = xi2P(rs, l=0, lowring=False, deriv=0)(xi0, extrap=False)
-    ks, P2 = xi2P(rs, l=2, lowring=False, deriv=0)(xi2, extrap=False)
-    ks, P4 = xi2P(rs, l=4, lowring=False, deriv=0)(xi4, extrap=False)
+    ks, P0 = xi2P(rs, l=0, lowring=False)(xi0, extrap=False)
+    ks, P2 = xi2P(rs, l=2, lowring=False)(xi2, extrap=False)
+    ks, P4 = xi2P(rs, l=4, lowring=False)(xi4, extrap=False)
 
     return  ks, P0, P2, P4
 
